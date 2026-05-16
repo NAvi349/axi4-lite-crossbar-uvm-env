@@ -1,0 +1,2 @@
+For initial design instantiation, always ensure clock and reset are properly working.
+Also mention timeunit explicitly at top of testbench
