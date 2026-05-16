@@ -2,53 +2,53 @@
 `include "skidbuffer.sv"
 `include "addrdecode.sv"
 
+`timescale 1ns/1ps
 module sv_top ();
   
   logic clk;
   logic rst_n;
 
+  logic [3:0] s_axi_awvalid;
+  logic [3:0] s_axi_awready;
+  logic [127:0] s_axi_awaddr;
+  logic [11:0] s_axi_awprot;
+  logic [3:0] s_axi_wvalid;
+  logic [3:0] s_axi_wready;
+  logic [127:0] s_axi_wdata;
+  logic [15:0] s_axi_wstrb;
+  logic [3:0] s_axi_bvalid;
+  logic [3:0] s_axi_bready;
+  logic [7:0] s_axi_bresp;
+  logic [3:0] s_axi_arvalid;
+  logic [3:0] s_axi_arready;
+  logic [127:0] s_axi_araddr;
+  logic [11:0] s_axi_arprot;
+  logic [3:0] s_axi_rvalid;
+  logic [3:0] s_axi_rready;
+  logic [127:0] s_axi_rdata;
+  logic [7:0] s_axi_rresp;
 
-  logic s_axi_awvalid;
-  logic s_axi_awready;
-  logic [31:0] s_axi_awaddr;
-  logic [2:0] s_axi_awprot;
-  logic s_axi_wvalid;
-  logic s_axi_wready;
-  logic [31:0] s_axi_wdata;
-  logic [3:0] s_axi_wstrb;
-  logic s_axi_bvalid;
-  logic s_axi_bready;
-  logic [1:0] s_axi_bresp;
-  logic s_axi_arvalid;
-  logic s_axi_arready;
-  logic [31:0] s_axi_araddr;
-  logic [2:0] s_axi_arprot;
-  logic s_axi_rvalid;
-  logic s_axi_rready;
-  logic [31:0] s_axi_rdata;
-  logic [1:0] s_axi_rresp;
-
-  logic [63:0] m_axi_awaddr;
-  logic [5:0] m_axi_awprot;
-  logic [1:0] m_axi_awvalid;
-  logic [1:0] m_axi_awready;
-  logic [63:0] m_axi_wdata;
-  logic [7:0] m_axi_wstrb;
-  logic [1:0] m_axi_wvalid;
-  logic [1:0] m_axi_wready;
-  logic [3:0] m_axi_bresp;
-  logic [1:0] m_axi_bvalid;
-  logic [1:0] m_axi_bready;
-  logic [63:0] m_axi_araddr;
-  logic [5:0] m_axi_arprot;
-  logic [1:0] m_axi_arvalid;
-  logic [1:0] m_axi_arready;
-  logic [63:0] m_axi_rdata;
-  logic [3:0] m_axi_rresp;
-  logic [1:0] m_axi_rvalid;
-  logic [1:0] m_axi_rready;
+  logic [255:0] m_axi_awaddr;
+  logic [23:0] m_axi_awprot;
+  logic [7:0] m_axi_awvalid;
+  logic [7:0] m_axi_awready;
+  logic [255:0] m_axi_wdata;
+  logic [31:0] m_axi_wstrb;
+  logic [7:0] m_axi_wvalid;
+  logic [7:0] m_axi_wready;
+  logic [15:0] m_axi_bresp;
+  logic [7:0] m_axi_bvalid;
+  logic [7:0] m_axi_bready;
+  logic [255:0] m_axi_araddr;
+  logic [23:0] m_axi_arprot;
+  logic [7:0] m_axi_arvalid;
+  logic [7:0] m_axi_arready;
+  logic [255:0] m_axi_rdata;
+  logic [15:0] m_axi_rresp;
+  logic [7:0] m_axi_rvalid;
+  logic [7:0] m_axi_rready;
   
-  axilxbar  #(.NM(1), .NS(2))  axi_crossbar_uut (
+  axilxbar  axi_crossbar_uut (
       .S_AXI_ACLK     (clk),
       .S_AXI_ARESETN (rst_n),
   
@@ -117,7 +117,7 @@ module sv_top ();
     clk = 0;
     rst_n = 0;
     
-    #10ns;
+    #5ns;
 
     rst_n = 1;
 
@@ -128,10 +128,10 @@ module sv_top ();
     #1ns;
 	$display("Waiting for Reset release");    
 	// wait till reset released
-    while(!rst_n);
+    @(posedge rst_n);
     
 	$display("Reset released");
-    
+    $finish;
        
   end
   
