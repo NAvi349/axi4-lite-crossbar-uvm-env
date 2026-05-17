@@ -1,52 +1,50 @@
-`include "axilxbar.sv"
-`include "skidbuffer.sv"
-`include "addrdecode.sv"
-
 `timescale 1ns/1ps
+
 module sv_top ();
   
   logic clk;
   logic rst_n;
 
-  logic [3:0] s_axi_awvalid;
-  logic [3:0] s_axi_awready;
-  logic [127:0] s_axi_awaddr;
-  logic [11:0] s_axi_awprot;
-  logic [3:0] s_axi_wvalid;
-  logic [3:0] s_axi_wready;
-  logic [127:0] s_axi_wdata;
-  logic [15:0] s_axi_wstrb;
-  logic [3:0] s_axi_bvalid;
-  logic [3:0] s_axi_bready;
-  logic [7:0] s_axi_bresp;
-  logic [3:0] s_axi_arvalid;
-  logic [3:0] s_axi_arready;
-  logic [127:0] s_axi_araddr;
-  logic [11:0] s_axi_arprot;
-  logic [3:0] s_axi_rvalid;
-  logic [3:0] s_axi_rready;
-  logic [127:0] s_axi_rdata;
-  logic [7:0] s_axi_rresp;
+  logic [  3:0]   s_axi_awvalid;
+  logic [  3:0]   s_axi_awready;
+  logic [127:0]   s_axi_awaddr;
+  logic [ 11:0]   s_axi_awprot;
+  logic [  3:0]   s_axi_wvalid;
+  logic [  3:0]   s_axi_wready;
+  logic [127:0]   s_axi_wdata;
+  logic [ 15:0]   s_axi_wstrb;
+  logic [  3:0]   s_axi_bvalid;
+  logic [  3:0]   s_axi_bready;
+  logic [  7:0]   s_axi_bresp;
+  logic [  3:0]   s_axi_arvalid;
+  logic [  3:0]   s_axi_arready;
+  logic [127:0]   s_axi_araddr;
+  logic [ 11:0]   s_axi_arprot;
+  logic [  3:0]   s_axi_rvalid;
+  logic [  3:0]   s_axi_rready;
+  logic [127:0]   s_axi_rdata;
+  logic [  7:0]   s_axi_rresp;
 
-  logic [255:0] m_axi_awaddr;
-  logic [23:0] m_axi_awprot;
-  logic [7:0] m_axi_awvalid;
-  logic [7:0] m_axi_awready;
-  logic [255:0] m_axi_wdata;
-  logic [31:0] m_axi_wstrb;
-  logic [7:0] m_axi_wvalid;
-  logic [7:0] m_axi_wready;
-  logic [15:0] m_axi_bresp;
-  logic [7:0] m_axi_bvalid;
-  logic [7:0] m_axi_bready;
-  logic [255:0] m_axi_araddr;
-  logic [23:0] m_axi_arprot;
-  logic [7:0] m_axi_arvalid;
-  logic [7:0] m_axi_arready;
-  logic [255:0] m_axi_rdata;
-  logic [15:0] m_axi_rresp;
-  logic [7:0] m_axi_rvalid;
-  logic [7:0] m_axi_rready;
+  logic [255:0]   m_axi_awaddr;
+  logic [ 23:0]   m_axi_awprot;
+  logic [  7:0]   m_axi_awvalid;
+  logic [  7:0]   m_axi_awready;
+  logic [255:0]   m_axi_wdata;
+  logic [ 31:0]   m_axi_wstrb;
+  logic [  7:0]   m_axi_wvalid;
+  logic [  7:0]   m_axi_wready;
+  logic [ 15:0]   m_axi_bresp;
+  logic [  7:0]   m_axi_bvalid;
+  logic [  7:0]   m_axi_bready;
+  logic [255:0]   m_axi_araddr;
+  logic [ 23:0]   m_axi_arprot;
+  logic [  7:0]   m_axi_arvalid;
+  logic [  7:0]   m_axi_arready;
+  logic [255:0]   m_axi_rdata;
+  logic [ 15:0]   m_axi_rresp;
+  logic [  7:0]   m_axi_rvalid;
+  logic [  7:0]   m_axi_rready;
+
   
   axilxbar  axi_crossbar_uut (
       .S_AXI_ACLK     (clk),
@@ -111,7 +109,7 @@ module sv_top ();
       .M_AXI_RREADY  (m_axi_rready)
   );
   
-
+  // Reset block
   initial begin
     
     clk = 0;
@@ -122,17 +120,89 @@ module sv_top ();
     rst_n = 1;
 
   end
-
+  
+  // transaction block
   initial begin
     
-    #1ns;
+    
 	$display("Waiting for Reset release");    
 	// wait till reset released
     @(posedge rst_n);
     
 	$display("Reset released");
+    
+    @(posedge clk);
+    
+    #1;   
+    
+    $display("Driving AW Address to Slave 2 to Master 0");
+    s_axi_awaddr[31:0] = 'h4000_0001;
+    s_axi_wdata[31:0] = 'h0000_0002;
+    s_axi_wstrb[3:0] = 'hF;
+    s_axi_awvalid[0] = 1;
+    s_axi_wvalid[0] = 1;
+    
+    m_axi_awready[2] = 'b1; 
+    m_axi_wready[2] = 'b1;
+
+
+    do @(posedge clk) begin
+      
+    end while (s_axi_awready[0] === 0);  
+    
+    #1;
+    
+    $display("Got AW[0] Ready");
+
+    
+    s_axi_awvalid[0] = 0;      
+    //m_axi_awready[2] = 'b0;
+      
+    do @(posedge clk) begin
+    
+    end while (s_axi_wready[0] === 0);
+    
+    #1;
+    
+    //@(posedge clk);    
+    $display("Got W[0] Ready");
+
+    
+    s_axi_wvalid[0] = 0;
+    //m_axi_wready[2] = 0;
+    
+    m_axi_bvalid[2] = 1'b1;
+    m_axi_bresp[5:4] = 0;
+    s_axi_bready[0]  = 1'b1; 
+    
+    @(posedge clk);
+    
+    #1;
+    s_axi_bready[0] = 0;
+    
+    @(posedge clk);
+    
+    #1;
+    m_axi_bvalid[2] = 1'b0;   
+    
+   
+
+    repeat (5) @(posedge clk);
     $finish;
        
+  end
+  
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars;
+    
+  end
+  initial begin
+    $display("Clock monitor starts");  
+    for (int i = 0; i < 10; i++) begin
+      @(clk);
+      $display("Clock = %d", clk);
+    end
   end
   
   always #5ns clk = !clk;
