@@ -61,7 +61,7 @@ So AXI handshake works like this:
 When VALID goes HIGH it should remain HIGH until READY is asserted and it gets captured by the DUT (in posedge of most designs).
 It then can deassert to LOW.
 
-```
+```verilog
 @(posedge clk);
 #1;
 
@@ -74,3 +74,5 @@ VALID = LOW
 ```
 
 The above ensures that VALID and READY remain high for a edge
+
+## UVM Testbench
