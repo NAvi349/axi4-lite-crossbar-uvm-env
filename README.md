@@ -40,4 +40,37 @@ I drive slave address 'h4000_0002 on master 0 address channel. This slave addres
 
 All these signals were driven sequentially only. But the thing is since we can drive from both sides of the DUT, there should be seperate parallel task for each side to functionally verify the DUT. I decided to do this in UVM testbench.
 
+## Some lessons learnt
 
+### When to drive the pins of the DUT
+During the development of this SV testbench, I had this ambiguity of when I should drive the input to the DUT.
+
+Always we shall remember the golden rule.
+
+Wait for a posedge. Move a small timestep. Then assign the values. Since I use Verilator (which simulates using C++) this is the correct way to model hardware behaviour.
+
+```verilog
+@(posedge clk);
+#1;
+//drive inputs
+```
+
+### AXI Handshake
+
+So AXI handshake works like this:
+When VALID goes HIGH it should remain HIGH until READY is asserted and it gets captured by the DUT (in posedge of most designs).
+It then can deassert to LOW.
+
+```
+@(posedge clk);
+#1;
+
+VALID = HIGH
+do begin
+@(posedge clk);
+end while (READY == LOW);
+
+VALID = LOW
+```
+
+The above ensures that VALID and READY remain high for a edge
