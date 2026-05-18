@@ -76,3 +76,13 @@ VALID = LOW
 The above ensures that VALID and READY remain high for a edge
 
 ## UVM Testbench
+
+Since we drive in both directions of the DUT, we need a seperate agent at each side.
+
+### UVM Sequence item
+
+First we shall create the sequence item. This will contain all the signals from both sides. After that we register with the factory and create the new constructor.
+
+### UVM Driver
+
+
