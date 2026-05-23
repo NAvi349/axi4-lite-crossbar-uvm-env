@@ -75,14 +75,40 @@ VALID = LOW
 
 The above ensures that VALID and READY remain high for a edge
 
-## UVM Testbench
+## UVM Testbench Phase 1
 
+I am dividing this section into phases, as I will be developing the uvm architecture over many sessions. For now I have created a rough template code.
 Since we drive in both directions of the DUT, we need a seperate agent at each side.
 
-### UVM Sequence item
+### UVM Sequence item (both master and slave signals)
 
 First we shall create the sequence item. This will contain all the signals from both sides. After that we register with the factory and create the new constructor.
 
-### UVM Driver
+### Interface class (both master and slave signals)
 
+I have a single interface class for all the signals. I am planning to take advantage of clocking blocks to drive the signals correctly without race situations between testbench and DUT.
+
+### UVM Driver (for master input side)
+
+Here there are two drive input tasks. One for driving the slave address and another for driving slave data. For now I have kept them sequentially. After compilation passes and simulation is stable I am planning to use fork join to launch them parallely as in real world designs data can come before address and vice versa.
+
+### UVM Driver (for slave input side)
+
+Here we drive the ready signals and response for the master transactions.
+
+### UVM Environment
+
+I have declared two agents here. One for each side of the DUT.
+
+### Slave Memory
+
+Here I have asked an AI chatbot to generate me a AXI-compliant memory model. I am consulting the help of chatbot here as this repo will focus on the verification part of the AXI Lite Crossbar. I have instantiated 8 slave memory units. Bit slicing is done since the top level AXI signals are flattened.
+
+### UVM TB Top
+
+Here I have instantiated the axi-lite crossbar DUT and 8 slave memory units. I have used generate loop for instantiating the slave memory units. Also here I am setting the uvm_config_db for the interface.
+
+### Skeleton code for other components
+
+For now I have created skeleton code for monitors, scoreboard, agents.
 
