@@ -1,114 +1,199 @@
-# axi4-lite-crossbar
-This repository contains UVM env (eventually!) of a AXI4 Lite Cross-bar with two master and four slaves.
-This is a WIP.
+# AXI4-Lite Crossbar Verification
 
-# Design
-https://github.com/ZipCPU/wb2axip/blob/master/rtl/axilxbar.v - This will be the design I will be using
+This repository contains a work-in-progress UVM verification environment for an **AXI4-Lite crossbar** with multiple master and slave ports.
 
+The verification environment is being developed incrementally, starting with a pure SystemVerilog prototype testbench before moving into a full UVM-based architecture.
 
-# Design description and feature list to cover in testbench
-This section will provide a concise summary of the design and feature list to be covered in testbench.
-The design has 4 ports in the left side and 8 ports in the right side. The left side ports are master inputs and right side ports are slave inputs (master outputs). This interconnect maps a master to any one of the slaves. If two masters access the same slave at a time, arbitation rules are used.
+> **Status:** Work in Progress (WIP)
 
-Suppose we take Master 0 and Slave 2:
+---
 
-I place the address of slave 2 on master 0' address channel. Data that I will send to slave 2 will also be placed on master 0's data channel.
-At the right side, I check slave 2 pins to see the address and data I placed on master 0 channels.
+## Design Under Verification
 
-# Verification activities
-- Prototype testbench in pure system verilog to understand design behaviour.
+The design used for this project is the AXI-Lite crossbar from the ZipCPU `wb2axip` repository:
+
+- [axilxbar.v — ZipCPU/wb2axip](https://github.com/ZipCPU/wb2axip/blob/master/rtl/axilxbar.v)
+
+---
+
+## Design Description and Feature List
+
+The DUT is an **AXI4-Lite crossbar interconnect**.
+
+The crossbar configuration being verified has:
+
+- **4 ports on the left side** — master input-side ports
+- **8 ports on the right side** — slave output-side ports
+
+The interconnect maps a transaction from any master to one of the available slaves based on the address. If two or more masters attempt to access the same slave at the same time, arbitration logic decides which master gets access.
+
+### Example Transaction
+
+Consider **Master 0** accessing **Slave 2**:
+
+1. The address corresponding to Slave 2 is driven on Master 0's address channel.
+2. The write data intended for Slave 2 is driven on Master 0's data channel.
+3. On the slave side, the testbench checks the Slave 2 output pins.
+4. The address and data observed on Slave 2 should match what was driven by Master 0.
+
+This confirms that the crossbar correctly routes transactions from the selected master to the addressed slave.
+
+---
+
+## Verification Activities
+
+- Prototype testbench in pure SystemVerilog to understand design behavior
 - UVM sequence item
-- UVM sequence, sequencer and driver - Agent design
+- UVM sequence, sequencer, and driver — agent design
 - UVM monitor
 - UVM scoreboard
-- UVM env
+- UVM environment
 
-# Testplan
+---
+
+## Test Plan
+
 This section will cover test scenarios planned for the design.
 
-# Testbench development
-I will first try to understand the design properly through pure system verilog simulation before moving onto UVM testbench.
+Planned scenarios include:
 
-## System Verilog Prototype testbench
+- Single master accessing a single slave
+- One master accessing multiple slaves
+- Multiple masters accessing different slaves
+- Multiple masters accessing the same slave (arbitration)
+- Read transactions
+- Write transactions
+- Back-to-back transactions
+- `READY` / `VALID` handshake behavior
+- Slave response handling
+- Reset behavior
+- Address decoding checks
 
-First I attempted a very crude system verilog testbench. I instantiated the design. I decided to keep the parameters default. Clock and reset_n are driven to the clock. I also implemented a seperate clock monitor inside a seperate initial block.
+---
 
-<img width="1772" height="626" alt="image" src="https://github.com/user-attachments/assets/a72b6e4e-56e0-43cd-944a-d833712a1724" />
-This is the simulation result.
+## Testbench Development
 
-I drive slave address 'h4000_0002 on master 0 address channel. This slave address corresponds to slave 2. From the design and also from simulation I observed that there seems to be 2 clock cycle latency in the transmission path.
+The testbench is being developed in stages. The first stage is a pure SystemVerilog prototype to understand DUT behavior, followed by a full UVM environment.
 
-All these signals were driven sequentially only. But the thing is since we can drive from both sides of the DUT, there should be seperate parallel task for each side to functionally verify the DUT. I decided to do this in UVM testbench.
+---
 
-## Some lessons learnt
+## SystemVerilog Prototype Testbench
 
-### When to drive the pins of the DUT
-During the development of this SV testbench, I had this ambiguity of when I should drive the input to the DUT.
+A simple SystemVerilog testbench was developed first.
 
-Always we shall remember the golden rule.
+In this testbench:
 
-Wait for a posedge. Move a small timestep. Then assign the values. Since I use Verilator (which simulates using C++) this is the correct way to model hardware behaviour.
+- The DUT is instantiated directly
+- Default DUT parameters are used
+- Clock and `reset_n` are driven by the testbench
+- A separate clock monitor is implemented in another `initial` block
+
+### Initial Simulation
+
+- Slave address `32'h4000_0002` was driven on the Master 0 address channel
+- This address corresponds to **Slave 2**
+- The transaction appeared correctly on the Slave 2 side
+- A **2 clock cycle latency** was observed in the transmission path
+
+<img width="1772" height="626" alt="Simulation Result" src="https://github.com/user-attachments/assets/a72b6e4e-56e0-43cd-944a-d833712a1724" />
+
+The initial stimulus was driven sequentially. However, since both sides of the DUT need to be exercised, future testbenches should use parallel tasks for each interface — which is one motivation for moving to UVM.
+
+---
+
+## Lessons Learned
+
+### When to Drive DUT Inputs
+
+The golden rule followed:
+
+1. Wait for a positive clock edge
+2. Move a small timestep after the edge
+3. Drive the input signals
+
+This avoids race conditions between the DUT and testbench. Since Verilator simulates using a C++ backend, this style helps model hardware behavior correctly.
 
 ```verilog
 @(posedge clk);
 #1;
-//drive inputs
+// drive inputs
 ```
 
 ### AXI Handshake
 
-So AXI handshake works like this:
-When VALID goes HIGH it should remain HIGH until READY is asserted and it gets captured by the DUT (in posedge of most designs).
-It then can deassert to LOW.
+The AXI handshake rule:
+
+- When `VALID` goes HIGH, it must remain HIGH until `READY` is asserted and the transfer is captured by the DUT (typically on a `posedge`)
+- After the handshake, `VALID` may be deasserted
 
 ```verilog
 @(posedge clk);
 #1;
+VALID = 1'b1;
 
-VALID = HIGH
 do begin
-@(posedge clk);
-end while (READY == LOW);
+  @(posedge clk);
+end while (READY == 1'b0);
 
-VALID = LOW
+VALID = 1'b0;
 ```
 
-The above ensures that VALID and READY remain high for a edge
+The above ensures that `VALID` and `READY` are both high for at least one clock edge, allowing the transfer to be captured.
 
-## UVM Testbench Phase 1
+---
 
-I am dividing this section into phases, as I will be developing the uvm architecture over many sessions. For now I have created a rough template code.
-Since we drive in both directions of the DUT, we need a seperate agent at each side.
+## UVM Testbench — Phase 1
 
-### UVM Sequence item (both master and slave signals)
+The UVM testbench is being developed in phases. For now, a rough template has been created.
 
-First we shall create the sequence item. This will contain all the signals from both sides. After that we register with the factory and create the new constructor.
+Since the DUT is driven from both sides, **separate agents** are used for each side.
 
-### Interface class (both master and slave signals)
+### UVM Sequence Item (Master and Slave Signals)
 
-I have a single interface class for all the signals. I am planning to take advantage of clocking blocks to drive the signals correctly without race situations between testbench and DUT.
+A single sequence item is used containing all signals from both sides. It is registered with the UVM factory and includes a standard `new` constructor.
 
-### UVM Driver (for master input side)
+### Interface (Master and Slave Signals)
 
-Here there are two drive input tasks. One for driving the slave address and another for driving slave data. For now I have kept them sequentially. After compilation passes and simulation is stable I am planning to use fork join to launch them parallely as in real world designs data can come before address and vice versa.
+A single interface contains all DUT signals. **Clocking blocks** are used to drive signals correctly without race conditions between the testbench and DUT.
 
-### UVM Driver (for slave input side)
+### UVM Driver — Master Input Side
 
-Here we drive the ready signals and response for the master transactions.
+The master-side driver contains two drive tasks:
+
+- One for driving the slave address
+- One for driving the slave data
+
+For now, these run sequentially. After compilation passes and simulation is stable, the plan is to use `fork...join` to launch them in parallel — since in real AXI designs, data can arrive before address and vice versa.
+
+### UVM Driver — Slave Input Side
+
+The slave-side driver drives the `READY` signals and responses for master transactions.
 
 ### UVM Environment
 
-I have declared two agents here. One for each side of the DUT.
+Two agents are declared in the environment — one for each side of the DUT.
 
 ### Slave Memory
 
-Here I have asked an AI chatbot to generate me a AXI-compliant memory model. I am consulting the help of chatbot here as this repo will focus on the verification part of the AXI Lite Crossbar. I have instantiated 8 slave memory units. Bit slicing is done since the top level AXI signals are flattened.
+An AXI-compliant memory model was generated with the help of an AI chatbot, since this repository focuses on the **verification** side of the AXI-Lite crossbar.
+
+- 8 slave memory units are instantiated
+- Bit slicing is done because the top-level AXI signals are flattened
 
 ### UVM TB Top
 
-Here I have instantiated the axi-lite crossbar DUT and 8 slave memory units. I have used generate loop for instantiating the slave memory units. Also here I am setting the uvm_config_db for the interface.
+In the top-level testbench:
 
-### Skeleton code for other components
+- The AXI-Lite crossbar DUT is instantiated
+- 8 slave memory units are instantiated using a `generate` loop
+- The interface handle is set in `uvm_config_db` for UVM components to access
 
-For now I have created skeleton code for monitors, scoreboard, agents.
+### Skeleton Code for Other Components
 
+Skeleton code has been created for:
+
+- Monitors
+- Scoreboard
+- Agents
+
+These will be filled in during later phases.
