@@ -3,8 +3,8 @@ Description: This is the slave input driver
 */
 
 
-class axi_xbar_slave_driver extends uvm_driver;
-  virtual axi_xbar_if xif();
+class axi_xbar_slave_driver extends uvm_driver #(axi_xbar_item);
+  virtual axi_xbar_if xif;
  
  `uvm_component_utils(axi_xbar_slave_driver)
   
@@ -18,7 +18,7 @@ class axi_xbar_slave_driver extends uvm_driver;
   function void build_phase(uvm_phase phase);
     super.build_phase(phase);
     
-   `uvm_config_db(vif)::set("", *, "xif", xif);
+    uvm_config_db#(virtual axi_xbar_if)::get(this, "", "axi_xbar_if", xif);
   endfunction: build_phase
   
   task run_phase(uvm_phase phase);
@@ -39,40 +39,40 @@ class axi_xbar_slave_driver extends uvm_driver;
   task drive_slave_address_response(axi_xbar_item s_tx);
     
     // this task should drive the ready signal for address
-    @xif.cb_s;
+    @(posedge xif.clock);
     
     do begin
-      @xif.cb_s;
-    end while (m_axi_awvalid != 0);
+      @(posedge xif.clock);
+    end while (xif.m_axi_awvalid != 0);
     
-    xif.cb_s.m_axi_awready <= 1;
+    xif.m_axi_awready <= 1;
     
   endtask
   
   task drive_slave_data_response(axi_xbar_item s_tx);
     
     // this task drives ready signal for data
-    @xif.cb_s;
+    @(posedge xif.clock);
     
-    do begin
-      @xif.cb;      
-    end while (m_axi_wvalid != 0);
+    //do begin
+      //@xif.cb;      
+    //end while (m_axi_wvalid != 0);
     
-    xif.cb_s.m_axi_wready <= 1;
+    xif.m_axi_wready <= 1;
   endtask
   
   task drive_slave_final_response(axi_xbar_item s_tx);
     
     // drive slave response handshake
-    @xif.cb_s;
+    @(posedge xif.clock);
     
-    xif.cb_s.m_axi_bvalid <= 1;
+    xif.m_axi_bvalid <= 1;
     
-    do begin
-     @xif.cb_s;
-    end while (xif.cb_s.m_axi_bready === 0);
+    //do begin
+    @(posedge xif.clock);
+    //end while (xif.cb_s.m_axi_bready === 0);
     
-    xif.cb_s.m_axi_bvalid <= 0;
+    xif.m_axi_bvalid <= 0;
   endtask
   
   
