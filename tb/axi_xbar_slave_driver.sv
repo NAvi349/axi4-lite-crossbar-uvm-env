@@ -26,10 +26,10 @@ class axi_xbar_slave_driver extends uvm_driver #(axi_xbar_item);
     
     forever begin
       seq_item_port.get_next_item(tx);
-      $cast(s_tx, tx);
-      drive_slave_address_response(s_tx);
-      drive_slave_data_response(s_tx);
-      drive_slave_final_response(s_tx);
+      //$cast(s_tx, tx);
+      //drive_slave_address_response(s_tx);
+      //drive_slave_data_response(s_tx);
+      //drive_slave_final_response(s_tx);
       seq_item_port.item_done(); 
     end
     
@@ -41,9 +41,10 @@ class axi_xbar_slave_driver extends uvm_driver #(axi_xbar_item);
     // this task should drive the ready signal for address
     @(posedge xif.clock);
     
-    do begin
-      @(posedge xif.clock);
+    do @(posedge xif.clock) begin
+      `uvm_info("SLV_DRV", "Waiting for AW VALID from master", UVM_LOW)
     end while (xif.m_axi_awvalid != 0);
+    
     
     xif.m_axi_awready <= 1;
     
