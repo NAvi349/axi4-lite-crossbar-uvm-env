@@ -1,5 +1,27 @@
-module uvm_tb_top;
-  
+`include "uvm_macros.svh"
+import uvm_pkg::*;
+
+`include "axi_xbar_if.sv"
+`include "axi_slave_mem.sv"
+`include "axi_xbar_item.sv"
+`include "axi_xbar_seq_lib.sv"
+`include "axi_xbar_master_driver.sv"
+`include "axi_xbar_slave_driver.sv"
+`include "axi_xbar_master_monitor.sv"
+`include "axi_xbar_slave_monitor.sv"
+//`include "axi_xbar_master_sequencer.sv"
+//`include "axi_xbar_slave_sequencer.sv"
+`include "axi_xbar_master_agent.sv"
+`include "axi_xbar_slave_agent.sv"
+`include "axi_xbar_scoreboard.sv"
+`include "axi_xbar_env.sv"
+`include "axi_xbar_base_test.sv"
+`include "axi_xbar_write_read_test.sv"
+
+
+module testbench;
+  //import axi_xbar_pkg::*;
+    
   bit clk;
   bit rst_n;
   genvar i;  
@@ -72,31 +94,29 @@ module uvm_tb_top;
 
   
 
-
-
   generate
-  for (i = 0; i < 8; i++) begin : SLAVE
+    for (i = 0; i < 8; i++) begin : SLAVE
 
       axi_slave_mem slave (
           .ACLK    (clk),
           .ARESETN (rst_n),
 
-          .AWADDR  (axi_xif.m_axi_awaddr[i*32 +: 32]),
+        .AWADDR  (axi_xif.m_axi_awaddr[i*32 +: 32]),
           .AWVALID (axi_xif.m_axi_awvalid[i]),
           .AWREADY (axi_xif.m_axi_awready[i]),
 
-          .WDATA   (axi_xif.m_axi_wdata[i*32 +: 32]),
+        .WDATA   (axi_xif.m_axi_wdata[i*32 +: 32]),
           .WVALID  (axi_xif.m_axi_wvalid[i]),
           .WREADY  (axi_xif.m_axi_wready[i]),
 
           .BVALID  (axi_xif.m_axi_bvalid[i]),
           .BREADY  (axi_xif.m_axi_bready[i]),
 
-          .ARADDR  (axi_xif.m_axi_araddr[i*32 +: 32]),
+        .ARADDR  (axi_xif.m_axi_araddr[i*32 +: 32]),
           .ARVALID (axi_xif.m_axi_arvalid[i]),
           .ARREADY (axi_xif.m_axi_arready[i]),
 
-          .RDATA   (axi_xif.m_axi_rdata[i*32 +: 32]),
+        .RDATA   (axi_xif.m_axi_rdata[i*32 +: 32]),
           .RVALID  (axi_xif.m_axi_rvalid[i]),
           .RREADY  (axi_xif.m_axi_rready[i])
       );
@@ -105,25 +125,33 @@ module uvm_tb_top;
 endgenerate
 
   initial begin
-    `uvm_config_db(virtual axi_xbar_if)::set(uvm_root::get(), "*", "axi_xbar_if", axi_xif)
+    uvm_config_db#(virtual axi_xbar_if)::set(uvm_root::get(), "*", "axi_xbar_if", axi_xif);
     
-    run_test("test_name");
+    run_test("axi_xbar_write_read_test");
     
   end
   
   
   
   initial begin
-    clk = 0;
-    rst_n = 0;
+    clk <= 0;
+    rst_n <= 0;
     
-    @repeat (2) (negedge clk);
+    #20ns;
     
-    rst_n = 1;
+    $display("reset released");
+    rst_n <= 1;
+
+    
+    #50ns;
+    $finish;
   end
+ 
   
-  forever begin
-    #5ns clk = ~clk;
+  initial begin
+        
+        forever #5ns clk = ~clk;
+    
   end
   
   
