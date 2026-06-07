@@ -201,4 +201,11 @@ These will be filled in during later phases.
 ### Phase 2
 
 This is where we do a basic transaction driving to the DUT with compilation cleaned up
-There is one agent each at master and slave side of the DUT. For now there is no driver at slave side. The slave agent is passive as there is a dedicated axi slave memory design
+There is one agent each at master and slave side of the DUT. For now there is no driver at slave side. The slave agent is passive as there is a dedicated axi slave memory design.
+In this phase will complete a directed write and read transaction
+
+#### UVM Write transaction
+
+<img width="1885" height="599" alt="image" src="https://github.com/user-attachments/assets/1b9fb6d2-4a55-46aa-bb9e-f59c313b8741" />
+
+Here the transaction is from Master 0 to Slave 2 with same data values from prototype testbench
