@@ -79,9 +79,9 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
 
     repeat (2) @(posedge xif.clock);
     
-    do @(posedge xif.clock) begin
+    //do @(posedge xif.clock) begin
       `uvm_info("MST_DRV", "Waiting for AW Ready from slave", UVM_LOW)
-    end while (xif.s_axi_awready[0] === 0);
+    while (xif.s_axi_awready[0] === 0);
     
     xif.s_axi_awvalid [   0]  <= 'b0;
     
@@ -105,11 +105,19 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
     //do @(posedge xif.clock) begin
     // `uvm_info("MST_DRV", "Waiting for W Ready from slave", UVM_LOW)      
     //end
-    while (xif.s_axi_wready[0] === 0);
+    fork 
       
+      begin
+        while (xif.s_axi_wready[0] === 0);
+      end
       
+      begin
+        #100ns;
+        `uvm_error("MST_DRV", "W Ready timeout")
+      end
+    join_any
     
-    `uvm_info("MST_DRV", $sformatf("Got W[0] Ready"), UVM_LOW)
+   `uvm_info("MST_DRV", $sformatf("Got W[0] Ready"), UVM_LOW)
     
     xif.s_axi_wvalid  [   0]  <= 'b0;
     
@@ -118,10 +126,10 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
     fork 
       
       begin
-        do @(posedge xif.clock) begin
       `uvm_info("MST_DRV", "Waiting for BVALID from slave", UVM_LOW)
-    end while (xif.s_axi_bvalid[0] === 0);
-        
+        while (xif.s_axi_bvalid[0] === 0) begin
+          @(posedge xif.clock);
+        end
       end
       
       begin
