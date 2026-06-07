@@ -197,3 +197,8 @@ Skeleton code has been created for:
 - Agents
 
 These will be filled in during later phases.
+
+### Phase 2
+
+This is where we do a basic transaction driving to the DUT with compilation cleaned up
+There is one agent each at master and slave side of the DUT.
