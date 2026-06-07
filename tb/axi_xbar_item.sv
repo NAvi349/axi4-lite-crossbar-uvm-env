@@ -1,4 +1,4 @@
-class axi_xbar_item extends uvm_sequence();
+class axi_xbar_item extends uvm_sequence_item;
   
   
 
