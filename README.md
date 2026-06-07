@@ -201,4 +201,4 @@ These will be filled in during later phases.
 ### Phase 2
 
 This is where we do a basic transaction driving to the DUT with compilation cleaned up
-There is one agent each at master and slave side of the DUT.
+There is one agent each at master and slave side of the DUT. For now there is no driver at slave side. The slave agent is passive as there is a dedicated axi slave memory design
