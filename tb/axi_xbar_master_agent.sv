@@ -18,12 +18,10 @@ class axi_xbar_master_agent extends uvm_agent;
   endfunction
   
   function void connect_phase (uvm_phase phase);
+    super.connect_phase(phase);
     axi_x_m_drvr.seq_item_port.connect(axi_x_m_sqr.seq_item_export);
         
   endfunction
   
-  task run_phase(uvm_phase phase);
-    super.run_phase(phase);
-  endtask
   
 endclass
