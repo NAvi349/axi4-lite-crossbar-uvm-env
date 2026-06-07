@@ -93,10 +93,10 @@ module testbench;
   );
 
   
-
+  
   generate
     for (i = 0; i < 8; i++) begin : SLAVE
-
+  
       axi_slave_mem slave (
           .ACLK    (clk),
           .ARESETN (rst_n),
@@ -120,9 +120,12 @@ module testbench;
           .RVALID  (axi_xif.m_axi_rvalid[i]),
           .RREADY  (axi_xif.m_axi_rready[i])
       );
-
+  
   end
 endgenerate
+
+  
+
 
   initial begin
     uvm_config_db#(virtual axi_xbar_if)::set(uvm_root::get(), "*", "axi_xbar_if", axi_xif);
@@ -143,8 +146,8 @@ endgenerate
     rst_n <= 1;
 
     
-    #50ns;
-    $finish;
+    //#50ns;
+    //$finish;
   end
  
   
@@ -154,5 +157,7 @@ endgenerate
     
   end
   
-  
+  initial begin
+    $dumpfile("dump.vcd"); $dumpvars;
+  end
 endmodule
