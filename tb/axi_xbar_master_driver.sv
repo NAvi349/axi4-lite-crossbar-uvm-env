@@ -38,9 +38,15 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
       // address channel
       // data channel
       // implement fork for this in future
-      drive_slave_address_into_master_input(m_tx);
-      // second task changes based on read or write
-      drive_slave_data_into_master_input(m_tx);
+      begin
+        drive_slave_address_into_master_input(m_tx);
+        drive_slave_data_into_master_input(m_tx);
+      end
+      
+      begin
+        drive_read_slave_address_into_master_input(m_tx);
+        drive_master_response_to_slave_read_data(m_tx);  
+      end
       
       seq_item_port.item_done();
     end
@@ -79,9 +85,9 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
 
     repeat (2) @(posedge xif.clock);
     
-    //do @(posedge xif.clock) begin
+    do @(posedge xif.clock) begin
       `uvm_info("MST_DRV", "Waiting for AW Ready from slave", UVM_LOW)
-    while (xif.s_axi_awready[0] === 0);
+    end while (xif.s_axi_awready[0] === 0);
     
     xif.s_axi_awvalid [   0]  <= 'b0;
     
@@ -95,7 +101,7 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
     
     `uvm_info("MST_DRV", $sformatf("Driving Data of Slave 2 to Master 0"), UVM_LOW)
     
-    xif.s_axi_wdata   [31:0]  <= 'h0000_0002;
+    xif.s_axi_wdata   [31:0]  <= 'h0000_0042;
     xif.s_axi_wstrb   [ 3:0]  <= 'hF;
     
     xif.s_axi_wvalid  [   0]  <= 'b1;
@@ -105,19 +111,11 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
     //do @(posedge xif.clock) begin
     // `uvm_info("MST_DRV", "Waiting for W Ready from slave", UVM_LOW)      
     //end
-    fork 
+    while (xif.s_axi_wready[0] === 0);
       
-      begin
-        while (xif.s_axi_wready[0] === 0);
-      end
       
-      begin
-        #100ns;
-        `uvm_error("MST_DRV", "W Ready timeout")
-      end
-    join_any
     
-   `uvm_info("MST_DRV", $sformatf("Got W[0] Ready"), UVM_LOW)
+    `uvm_info("MST_DRV", $sformatf("Got W[0] Ready"), UVM_LOW)
     
     xif.s_axi_wvalid  [   0]  <= 'b0;
     
@@ -126,18 +124,19 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
     fork 
       
       begin
+        do @(posedge xif.clock) begin
       `uvm_info("MST_DRV", "Waiting for BVALID from slave", UVM_LOW)
-        while (xif.s_axi_bvalid[0] === 0) begin
-          @(posedge xif.clock);
-        end
+    end while (xif.s_axi_bvalid[0] === 0);
+        
       end
       
       begin
-        #40ns;
+        #60ns;
         `uvm_error("MST_DRV", "BVALID not received from slave")
       end
       
     join_any
+    disable fork;
     
     `uvm_info("MST_DRV", $sformatf("Got Bvalid from slave"), UVM_LOW);
     xif.s_axi_bready[0] <= 1;
@@ -146,6 +145,55 @@ class axi_xbar_master_driver extends uvm_driver #(axi_xbar_item);
       
   endtask
   
+  task drive_read_slave_address_into_master_input (axi_xbar_item m_tx);
+    
+   `uvm_info("MST_DRV", $sformatf("Read Transaction - Address Phase"), UVM_LOW)
+   `uvm_info("MST_DRV", $sformatf("Driving Address of Slave 2 to Master 0"), UVM_LOW)
+    
+    xif.s_axi_araddr  [31:0]  <= 'h4000_0001;
+    xif.s_axi_arvalid [   0]  <= 'b1;
+
+    
+    repeat (2) @(posedge xif.clock);
+    
+
+   `uvm_info("MST_DRV", "Waiting for AR Ready from slave", UVM_LOW)
+    while (xif.s_axi_arready[0] === 0) begin
+      @(posedge xif.clock);
+    end
+
+   `uvm_info("MST_DRV", $sformatf("Got AR[0] Ready"), UVM_LOW)
+    
+    xif.s_axi_arvalid [   0]  <= 'b0;
+    
+    //xif.s_axi_rready  [   0]  <= 'b1; // assert ready to receive data
+    
+    repeat (2) @(posedge xif.clock);
+    
+
+  endtask
+  
+  task drive_master_response_to_slave_read_data (axi_xbar_item m_tx);
+  
+    `uvm_info("MST_DRV", $sformatf("Read Transaction - Read Phase"), UVM_LOW)
+    
+    
+    xif.s_axi_rready [0] <= 'b1;
+    
+    `uvm_info("MST_DRV", "Waiting for R Valid from slave", UVM_LOW)
+   
+    while (xif.s_axi_rvalid === 0) begin
+      @(posedge xif.clock);
+    end
+    
+    `uvm_info("MST_DRV", $sformatf("Read data = %h", xif.s_axi_rdata [31:0]), UVM_LOW)
+    
+    xif.s_axi_rready [0] <= 'b0;
+    
+    repeat (2) @(posedge xif.clock);
+    
+  
+  endtask
   
   
 endclass: axi_xbar_master_driver
