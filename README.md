@@ -209,3 +209,15 @@ In this phase will complete a directed write and read transaction
 <img width="1885" height="599" alt="image" src="https://github.com/user-attachments/assets/1b9fb6d2-4a55-46aa-bb9e-f59c313b8741" />
 
 Here the transaction is from Master 0 to Slave 2 with same data values from prototype testbench
+
+#### UVM Write transaction followed by Read transaction
+
+Write transaction:
+<img width="1896" height="609" alt="image" src="https://github.com/user-attachments/assets/d873d501-7bfa-445a-8a76-4f5aaafc34e8" />
+
+Read transaction:
+<img width="1903" height="521" alt="image" src="https://github.com/user-attachments/assets/517e5093-7d2e-4e30-ae0f-f2c998205cec" />
+
+The RRESP is 'hx. <-- TODO item
+
+One of the things that I wondered here whether I was writing testbench to fit the design. Here the design is functionally correct. So I might have write testbench according to design behaviour inadverdently and not according to SPEC.
